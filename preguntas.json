@@ -1,0 +1,18 @@
+{
+  "titulo": "Adivinanzas María Fe",
+  "segundos": 30,
+  "puntos_primero": 3,
+  "puntos_acierto": 1,
+  "preguntas": [
+    {"texto": "Órdenes da, órdenes recibe, algunas las autoriza, otras las prohíbe. ¿Qué es?",
+     "opciones": ["El corazón", "El cerebro", "El estómago", "El pulmón"], "correcta": 1, "respuesta": "EL CEREBRO"},
+    {"texto": "Con una mano lo puedes parar y con la otra pagar. ¿Qué es?",
+     "opciones": ["La tienda", "El semáforo", "El taxi", "El cajero"], "correcta": 2, "respuesta": "EL TAXI"},
+    {"texto": "Siempre está frente a nosotros, pero no lo podemos ver. ¿Qué es?",
+     "opciones": ["La luna", "El pasado", "El espejo", "El futuro"], "correcta": 3, "respuesta": "EL FUTURO"},
+    {"texto": "Tengo un ojo, pero no puedo ver. ¿Qué es?",
+     "opciones": ["Una linterna", "Una aguja", "Un reloj", "Una botella"], "correcta": 1, "respuesta": "UNA AGUJA"},
+    {"texto": "¿Qué sube cuando la lluvia baja?",
+     "opciones": ["Un arcoíris", "Una hoja", "Un paraguas", "El sol"], "correcta": 2, "respuesta": "UN PARAGUAS"}
+  ]
+}

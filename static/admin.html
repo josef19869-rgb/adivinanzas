@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin · Adivinanzas</title><link rel="stylesheet" href="/static/estilos.css">
+<style>
+body{height:100vh;display:flex;flex-direction:column;padding:14px;gap:12px;overflow:hidden}
+.top{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.top h2{flex:1;font-size:clamp(20px,2.4vw,34px)}
+.chip{background:rgba(255,255,255,.12);padding:6px 12px;border-radius:99px;font-size:15px}
+#ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:14px}#ctrl .btn{padding:10px 14px}
+#ctrl input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.3);color:#fff;width:230px}
+a.btn{text-decoration:none;display:inline-block}
+body.proj #ctrl{display:none}
+main{flex:1;display:grid;grid-template-columns:2fr 1fr;gap:12px;min-height:0}
+#stage{display:flex;flex-direction:column;justify-content:center;gap:14px;overflow:auto}
+aside{display:flex;flex-direction:column;gap:12px;min-height:0}aside .card{overflow:auto}#fc{flex:3}#bc{flex:2}
+h3{margin-bottom:8px}
+.qt{font-size:clamp(26px,3.6vw,56px);font-weight:800;line-height:1.2}
+.ops{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.op{background:var(--blue);border-radius:14px;padding:16px;font-size:clamp(20px,2.4vw,36px);font-weight:700}
+.op b{opacity:.7;margin-right:10px}.op.right{background:#15803d;outline:4px solid var(--ok)}.op.dim{opacity:.35}
+.lobby{display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
+.lobby img{width:min(38vh,340px);border-radius:16px}.url{font-size:clamp(16px,1.8vw,26px);word-break:break-all;color:var(--gold);font-weight:700}
+.names span{display:inline-block;background:rgba(255,255,255,.12);border-radius:99px;padding:4px 12px;margin:3px}
+.tag{font-size:13px}.win-b{font-size:clamp(22px,3vw,44px);font-weight:800;color:var(--gold)}
+.mk{font-size:22px;font-weight:800}.qrs{display:flex;gap:12px;align-items:center;font-size:14px}.qrs img{width:90px;border-radius:8px}
+</style></head><body>
+<div class="top"><h2>🧩 <span id="ti"></span></h2><span class="chip" id="c1"></span><span class="chip" id="c2"></span><span class="chip" id="c3"></span>
+ <button class="btn sec" onclick="document.body.classList.toggle('proj')">🖥 Modo proyector</button></div>
+<div class="card" id="ctrl">
+ <button class="btn" id="main" onclick="act('next')"></button>
+ <button class="btn sec" onclick="act('repeat')">↻ Repetir</button>
+ <button class="btn sec" onclick="act('finish')">🏁 Podio</button>
+ <button class="btn sec" onclick="reset(true)">↺ Reiniciar puntos</button>
+ <button class="btn sec" onclick="reset(false)">🗑 Borrar todo</button>
+ <button class="btn sec" id="hb" onclick="hint()">👁 Ver respuesta</button><span id="hv" class="chip" hidden></span>
+ <span class="mut">URL participantes:</span><input id="base" onchange="setBase()">
+ <a class="btn sec" id="d1">⬇ Respuestas CSV</a><a class="btn sec" id="d2">⬇ Ranking CSV</a><a class="btn sec" id="d3">⬇ Todo JSON</a>
+</div>
+<main><section class="card" id="stage"></section>
+<aside><div class="card" id="fc"><h3>⚡ ¿Quién respondió primero?</h3><ol id="feed"></ol></div>
+<div class="card" id="bc"><h3>🏆 Ranking</h3><ol id="lb"></ol></div></aside></main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY=new URLSearchParams(location.search).get('key')||sessionStorage.getItem('k')||'';sessionStorage.setItem('k',KEY);
+let S=null,got=0,key='',base=localStorage.getItem('base')||'',lan='';
+const H={'X-Admin-Key':KEY};
+const userUrl=()=>(base||(/^(localhost|127\.)/.test(location.hostname)&&lan?lan:location.origin)).replace(/\/$/,'')+'/';
+function setBase(){base=$('#base').value.trim();localStorage.setItem('base',base);key=''}
+async function act(a,b){const r=await fetch('/api/admin/'+a,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(b||{})});if(!r.ok)alert('Error '+r.status);poll(1)}
+function reset(k){if(confirm(k?'¿Reiniciar puntos y respuestas (se conservan los participantes)?':'¿Borrar TODO, incluidos los participantes?'))act('reset',{keep_players:k})}
+function hint(){const v=$('#hv');v.hidden=!v.hidden;v.textContent=S&&S.admin.hint?'Respuesta: '+S.admin.hint:'—'}
+const qr=u=>`<img src="/qr.svg?data=${encodeURIComponent(u)}" alt="QR">`;
+function stage(){
+ const p=S.phase,u=userUrl(),k=p+S.qi+u;if(k===key)return;key=k;let h='';
+ if(p==='lobby')h=`<div class="lobby">${qr(u)}<div><div class="qt">Escanea y participa</div><p class="mut" style="margin:8px 0">o abre en tu iPhone:</p><div class="url">${esc(u)}</div>
+  <p style="margin-top:14px;font-size:22px"><b id="np"></b> participantes</p></div></div><div class="names" id="nm" style="text-align:center"></div>`;
+ else if(p==='finished')h=`<div class="lobby"><div><div class="qt">🏁 ¡Fin del concurso!</div><ol id="pod" style="margin-top:18px;font-size:clamp(20px,2.6vw,38px)"></ol></div></div>`;
+ else h=`<div class="mut">Adivinanza ${S.qi+1} de ${S.total}</div><div class="bar"><i id="tb"></i></div><div class="qt">${esc(S.q.texto)}</div>
+  <div class="ops">${S.q.ops.map((o,i)=>`<div class="op ${p==='closed'?(i===S.correct?'right':'dim'):''}"><b>${'ABCD'[i]}</b>${esc(o)}</div>`).join('')}</div>
+  <div id="wb" class="win-b"></div><div class="qrs">${qr(u)}<span>¿Te falta entrar?<br><b class="url" style="font-size:16px">${esc(u)}</b></span></div>`;
+ $('#stage').innerHTML=h}
+function render(){
+ const ph={lobby:'En espera',question:'Respondiendo',closed:'Ronda cerrada',finished:'Finalizado'}[S.phase];
+ $('#ti').textContent=S.titulo;$('#c1').textContent=ph;$('#c2').textContent=S.n_players+' participantes';$('#c3').textContent=S.q?S.n_ans+' respuestas':'';
+ const m=$('#main');m.textContent={lobby:'▶ Iniciar adivinanza 1',question:'⏹ Cerrar y revelar',closed:S.qi+1>=S.total?'🏁 Ver podio':'⏭ Siguiente adivinanza',finished:'—'}[S.phase];
+ m.disabled=S.phase==='finished';m.onclick=()=>act(S.phase==='question'?'close':'next');
+ if($('#hv')&&!$('#hv').hidden)hint();
+ stage();
+ if($('#np'))$('#np').textContent=S.n_players;if($('#nm'))$('#nm').innerHTML=S.admin.names.map(n=>`<span>${esc(n)}</span>`).join('');
+ if($('#wb'))$('#wb').textContent=S.phase==='closed'?(S.winner?'🏆 Primero en acertar: '+S.winner:'Nadie acertó'):'';
+ $('#feed').innerHTML=S.feed.map(f=>`<li class="r ${f.win?'win':''}"><b>${f.rank}</b><span class="n">${f.win?'🏆 ':f.rank===1?'⚡ ':''}${esc(f.name)}</span><span class="mut">${f.t.toFixed(2)} s</span><span class="mk ${f.ok?'ok':'bad'}">${f.ok?'✓':'✗'}</span></li>`).join('')||'<p class="mut">Aún nadie responde…</p>';
+ const L=S.board.map(r=>`<li class="r"><b>${r.pos}</b><span class="n">${esc(r.name)}</span><b>${r.pts}</b></li>`).join('');
+ $('#lb').innerHTML=L||'<p class="mut">Sin participantes</p>';
+ if($('#pod'))$('#pod').innerHTML=S.board.slice(0,3).map((r,i)=>`<li>${'🥇🥈🥉'[i]} ${esc(r.name)} — ${r.pts} pts</li>`).join('');
+ ['d1:respuestas','d2:ranking'].forEach(x=>{const[i,k]=x.split(':');$('#'+i).href=`/api/admin/export.csv?kind=${k}&key=${KEY}`});$('#d3').href='/api/admin/export.json?key='+KEY;
+ if(document.activeElement!==$('#base'))$('#base').value=userUrl().replace(/\/$/,'')}
+function tick(){if(!S||S.phase!=='question'||!$('#tb'))return;const r=Math.max(0,S.rem-(performance.now()-got));$('#tb').style.width=r/(S.seg*10)+'%'}
+let t;async function poll(now){clearTimeout(t);try{const r=await fetch('/api/admin/state',{headers:H});
+ if(r.status===401){document.body.innerHTML='<div class="card" style="margin:auto;max-width:480px"><h2>Clave inválida</h2><p>Abre el enlace de administrador que aparece en la consola: /admin?key=…</p></div>';return}
+ S=await r.json();got=performance.now();render()}catch(e){}t=setTimeout(poll,900)}
+fetch('/api/info').then(r=>r.json()).then(j=>lan=j.lan);setInterval(tick,200);poll();
+document.addEventListener('keydown',e=>{if(e.key==='p'&&e.target.tagName!=='INPUT')document.body.classList.toggle('proj')});
+</script></body></html>

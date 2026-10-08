@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: adivinanzas-concurso
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: ADMIN_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11.9"

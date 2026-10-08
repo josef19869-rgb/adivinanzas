@@ -1,0 +1,26 @@
+CONCURSO DE ADIVINANZAS EN VIVO
+================================
+1. Instala Python 3.9+ y ejecuta iniciar.bat (Windows) o ./iniciar.sh (Mac/Linux).
+2. La consola muestra dos enlaces:
+   - Participantes:  http://IP:8000/            (lo ven en el iPhone; se comparte por el QR)
+   - Administrador:  http://IP:8000/admin?key=XXXXXX   (pantalla principal + controles; NO compartir)
+3. Abre el enlace de administrador en el computador conectado al proyector. En espera aparece el QR.
+   Tecla P (o botón) = modo proyector, oculta los controles.
+4. Todos deben estar en el mismo WiFi. Si el WiFi bloquea la comunicación entre equipos, usa el hotspot
+   del celular, o un enlace público con:  cloudflared tunnel --url http://localhost:8000
+   Luego abre el admin con ESA dirección pública (https://xxxx.trycloudflare.com/admin?key=XXXXXX)
+   y el QR se genera solo con el enlace correcto.
+5. Descargas (barra de controles): respuestas CSV, ranking CSV y todo en JSON.
+Edita preguntas.json para cambiar adivinanzas, opciones, tiempo (segundos) y puntos.
+Puntos: primero en acertar = 3, resto de aciertos = 1. Los datos se guardan en data/estado.json.
+
+HOSTING GRATIS (Render.com) - link público sin dejar tu PC encendido
+--------------------------------------------------------------------
+1. Sube esta carpeta a un repositorio de GitHub (gratis).
+2. En render.com: New > Blueprint > elige el repositorio (lee render.yaml, plan free).
+3. Al terminar te da una dirección https://adivinanzas-concurso.onrender.com
+   - Participantes: esa dirección.
+   - Administrador: esa dirección + /admin?key=CLAVE  (la CLAVE está en Render > Environment > ADMIN_KEY).
+4. El plan gratis se duerme tras 15 min sin uso y tarda ~30-60 s en despertar:
+   abre el link de admin 5 minutos ANTES del concurso para que esté activo.
+   Al reiniciarse, los datos guardados se pierden: descarga los resultados al terminar.

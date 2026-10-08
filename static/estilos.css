@@ -1,0 +1,13 @@
+:root{--navy:#21295C;--blue:#065A82;--teal:#1C7293;--ok:#22c55e;--bad:#ef4444;--gold:#fbbf24;--mut:#9fb3d9}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#f1f5ff;min-height:100vh;
+ background:radial-gradient(1000px 600px at 15% -10%,#1C7293,transparent 60%),linear-gradient(160deg,#21295C,#0b1033 75%);-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:0}
+.card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:16px}
+.mut{color:var(--mut)} .ok{color:var(--ok)} .bad{color:var(--bad)}
+.btn{background:var(--teal);padding:14px 18px;border-radius:12px;font-weight:700}
+.btn.sec{background:rgba(255,255,255,.12)} .btn:disabled{opacity:.4}
+.bar{height:8px;border-radius:8px;background:rgba(255,255,255,.15);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--gold);transition:width .25s linear}
+ol{list-style:none} li.r{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06);margin-bottom:6px}
+li.r.win{background:rgba(251,191,36,.22);outline:2px solid var(--gold)} li.r .n{flex:1;font-weight:600}

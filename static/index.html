@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#21295C"><title>Adivinanzas</title>
+<link rel="stylesheet" href="/static/estilos.css">
+<style>
+#app{max-width:520px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 14px max(24px,env(safe-area-inset-bottom))}
+h1{font-size:30px;text-align:center;margin:18px 0 6px} .c{text-align:center}
+input{width:100%;font-size:18px;padding:14px;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:#fff;margin:6px 0 12px}
+label{font-size:14px;color:var(--mut)} .big{font-size:56px;margin:10px 0}
+.q{font-size:22px;font-weight:700;line-height:1.3;margin:14px 0}
+.op{display:flex;gap:12px;align-items:center;width:100%;text-align:left;font-size:20px;font-weight:600;padding:18px;border-radius:14px;background:var(--blue);margin-bottom:10px}
+.op b{background:rgba(255,255,255,.2);border-radius:8px;width:34px;height:34px;display:grid;place-items:center}
+.op.right{background:#15803d}.op.dim{opacity:.4}
+</style></head><body><div id="app"></div>
+<script>
+const $=s=>document.querySelector(s), app=$('#app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let pid=localStorage.getItem('pid')||'', S=null, got=0, key='';
+async function api(u,b){const r=await fetch(u,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(typeof j.detail==='string'?j.detail:'Revisa tus datos');return j}
+function lb(){return S.board.slice(0,5).map(r=>`<li class="r"><span>${r.pos}</span><span class="n">${esc(r.name)}</span><b>${r.pts} pts</b></li>`).join('')}
+function view(k,h){if(k!==key){key=k;app.innerHTML=h}}
+function render(){
+ const m=S.me,p=S.phase;
+ if(!m){view('reg',`<h1>🧩 ${esc(S.titulo)}</h1><p class="c mut">Ingresa tus datos para participar</p><div class="card" style="margin-top:16px">
+  <label>Nombre</label><input id="n" maxlength="30" autocapitalize="words" autocomplete="given-name">
+  <label>Apellido</label><input id="a" maxlength="30" autocapitalize="words" autocomplete="family-name">
+  <p id="err" class="bad" style="min-height:22px"></p><button class="btn" style="width:100%" onclick="go()">Entrar al concurso</button></div>`);return}
+ if(p==='lobby')view('w',`<div class="c"><div class="big">⏳</div><h1>¡Hola, ${esc(m.name)}!</h1><p class="mut">Esperando que inicie la primera adivinanza…</p></div>`);
+ else if(p==='finished')view('f',`<div class="c"><div class="big">🏁</div><h1>¡Fin del concurso!</h1><p>Quedaste en el puesto <b>${m.pos}</b> con <b>${m.pts}</b> puntos</p></div><div class="card" style="margin-top:16px"><ol id="lb"></ol></div>`);
+ else if(p==='question'&&!m.answered)view('q'+S.qi,`<div class="bar"><i id="tb"></i></div><p class="mut" style="margin-top:8px">Adivinanza ${S.qi+1} de ${S.total} · <span id="ts"></span> s</p>
+  <div class="q">${esc(S.q.texto)}</div>`+S.q.ops.map((o,i)=>`<button class="op" onclick="pick(${i},this)"><b>${'ABCD'[i]}</b>${esc(o)}</button>`).join(''));
+ else if(p==='question')view('a'+S.qi,`<div class="c"><div class="big" id="ic"></div><h1 id="rt"></h1><p id="rs" class="mut"></p><p class="mut" style="margin-top:14px">Espera a que termine la ronda… <span id="ts"></span> s</p></div>`);
+ else view('c'+S.qi,`<div class="c"><div class="big" id="ic"></div><h1 id="rt"></h1><p class="mut">La respuesta era</p><div class="q">${esc(S.correct_text)}</div>
+  <p id="wn"></p></div><div class="card" style="margin-top:16px"><ol id="lb"></ol></div>`);
+ if($('#ic')){const a=m.answered;$('#ic').textContent=a?(m.ok?'✅':'❌'):'⌛';$('#rt').textContent=a?(m.ok?'¡Correcto!':'Incorrecto'):'No respondiste';
+  if($('#rs'))$('#rs').textContent=m.ok?`Respondiste en el puesto ${m.rank} · ${m.t.toFixed(2)} s`:'Una sola oportunidad por adivinanza';}
+ if($('#wn'))$('#wn').textContent=S.winner?`🏆 Primero en acertar: ${S.winner}`:'Nadie acertó esta vez';
+ if($('#lb'))$('#lb').innerHTML=lb();
+}
+function tick(){if(!S)return;const rem=Math.max(0,S.rem-(performance.now()-got));
+ if($('#tb'))$('#tb').style.width=(rem/(S.seg*10))+'%';if($('#ts'))$('#ts').textContent=Math.ceil(rem/1000)}
+async function poll(){try{S=await api('/api/state?pid='+encodeURIComponent(pid));got=performance.now();
+  if(!S.me&&pid&&key!=='reg'){localStorage.removeItem('pid');pid=''}render()}catch(e){}setTimeout(poll,1000)}
+async function go(){const n=$('#n').value,a=$('#a').value;try{const r=await api('/api/join',{nombre:n,apellido:a});pid=r.pid;localStorage.setItem('pid',pid);key='';S=await api('/api/state?pid='+pid);got=performance.now();render()}catch(e){$('#err').textContent=e.message}}
+async function pick(i,b){document.querySelectorAll('.op').forEach(x=>x.disabled=true);
+ try{await api('/api/answer',{pid,option:i})}catch(e){}S=await api('/api/state?pid='+pid);got=performance.now();render()}
+setInterval(tick,200);poll();
+</script></body></html>
